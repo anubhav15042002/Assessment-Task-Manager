@@ -1,12 +1,16 @@
 const Task = require("../models/taskModel");
-const {validationResult} = require('express-validator');
+const { validationResult } = require("express-validator");
 const moment = require("moment");
+const mongoose = require("mongoose");
 
 const createTask = async (req, res) => {
-     // Check for validation errors
+  // Check for validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({
+      success: false,
+      message: errors.array()[0].msg,
+    });
   }
   try {
     const { title, description, taskGivenBy, taskGivenTo, status, dueDate } =
@@ -29,7 +33,9 @@ const createTask = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "Task created successfully",
-      taskDetails: newTask,
+      data: {
+        details: newTask,
+      },
     });
   } catch (error) {
     console.log("Error during Error Creation", error);
@@ -67,7 +73,9 @@ const getTasks = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Tasks found successfully",
-      taskList: tasks,
+      data: {
+        list: tasks,
+      },
     });
   } catch (error) {
     console.log("Error fetching Tasks", error);
@@ -79,29 +87,40 @@ const getTasks = async (req, res) => {
 };
 
 const updateTask = async (req, res) => {
+      // Check for validation errors
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: errors.array()[0].msg,
+        });
+      }
+  
+  
   try {
+   
     const taskToUpdateID = req.params.id;
-    if (!taskToUpdateID) {
+
+     // Check if the provided ID is a valid ObjectId
+     if (!mongoose.Types.ObjectId.isValid(taskToUpdateID)) {
       return res.status(400).json({
         success: false,
-        message: "ID not provided of the Task to update",
-      });
-    }
-    const updatedTaskData = req.body;
-    if (!updatedTaskData) {
-      return res.status(400).json({
-        success: false,
-        message: "Provide the fields and data to update",
+        message: "Invalid Task ID",
       });
     }
 
+    // Extract data from request body
+    const updatedTaskData = req.body;
+   
+
+    // Attempt to find and update the task by ID
     const taskToUpdate = await Task.findByIdAndUpdate(
       taskToUpdateID,
       updatedTaskData,
       {
-        new: true,
+        new: true, // Return the updated task
       }
-    );
+    );  
 
     if (!taskToUpdate) {
       return res.status(404).json({
@@ -109,10 +128,14 @@ const updateTask = async (req, res) => {
         message: "Task not found",
       });
     }
+
+    // Return the updated task details
     return res.status(201).json({
       success: true,
       message: "Task updated successfully",
-      updatedTask: taskToUpdate,
+      data: {
+        updatedTask: taskToUpdate,
+      },
     });
   } catch (error) {
     console.log("Error while updation", error);
@@ -124,15 +147,36 @@ const updateTask = async (req, res) => {
 };
 
 const deleteTask = async (req, res) => {
+    // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: errors.array()[0].msg,
+    });
+  }
+
   try {
-    const taskToDelete = await Task.findByIdAndDelete(req.params.id);
+
+    const taskToDeleteID = req.params.id;
+
+    // Check if the provided ID is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(taskToDeleteID)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Task ID format",
+      });
+    }
+
+    // Attempt to find and delete the task by ID
+    const taskToDelete = await Task.findByIdAndDelete(taskToDeleteID);
     if (!taskToDelete) {
       return res.status(404).json({
         success: false,
-        message: "Task not found",
+        message: "Task not found with the provided ID",
       });
     }
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
       message: "Task deleted successfully",
     });

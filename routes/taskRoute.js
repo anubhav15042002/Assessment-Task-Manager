@@ -1,12 +1,12 @@
 const express = require('express');
 const {createTask, getTasks, updateTask, deleteTask} = require('../controllers/taskController');
-const {validationChecks} = require ('../utils/validationChecks')
+const {validationChecksCreate , validationChecksUpdate , validationChecksDelete} = require ('../utils/validationChecks')
 
 const router = express.Router();
 
-router.post('/create', validationChecks ,createTask);
+router.post('/create', validationChecksCreate ,createTask);
 router.get('/get', getTasks);
-router.put('/update/:id' , updateTask);
-router.delete('/delete/:id' , deleteTask);
+router.put('/update/:id' , validationChecksUpdate , updateTask);
+router.delete('/delete/:id' , validationChecksDelete ,  deleteTask);
 
 module.exports = router;
